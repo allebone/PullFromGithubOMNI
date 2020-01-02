@@ -1,0 +1,17 @@
+#Array Server Names
+
+$browser = New-Object System.Net.WebClient
+$browser.Proxy.Credentials =[System.Net.CredentialCache]::DefaultNetworkCredentials 
+
+$url = "https://github.com/allebone/help.omni.af.mil/archive/master.zip"
+$output = "c:\Temp\master.zip"
+
+Invoke-WebRequest -Uri $url -OutFile $output
+
+Expand-Archive -Force -LiteralPath C:\Temp\master.zip -DestinationPath C:\
+
+Remove-Item -path C:\Temp\master.zip 
+
+#TODO  Copy/Push to SERVER/C$/Help but MUST overrite (Array for the Servers Names)
+
+#TODO  Send Command for Server IIS to Reboot Site: Help

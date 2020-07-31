@@ -41,13 +41,30 @@ Remove-Item -path $siteStagingDirectory -Recurse -ErrorAction SilentlyContinue
 $browser = New-Object System.Net.WebClient
 $browser.Proxy.Credentials =[System.Net.CredentialCache]::DefaultNetworkCredentials 
 
-#Download website source archive to $archivePath
-Invoke-WebRequest -Uri $sourceURL -OutFile $archivePath
+#Try 5 times to download website source archive to $archivePath
+$tries = 0
+$maxTries = 5
+while ($tries -lt $maxTries) {
+    try{
+        Invoke-WebRequest -Uri $sourceURL -OutFile $archivePath
+        $tries = $maxTries;
+    } catch {
+        $tries += 1
+        if($tries -eq $maxTries){
+            Throw "Unable to contact server after maximum retries"
+        }else{
+            Sleep -Seconds ($tries * 30)
+        }
+    }
+ }
+
 #UnZip the website source archive: $archivePath to the staging directory: $siteStagingDirectory
 Expand-Archive -Force -LiteralPath $archivePath -DestinationPath $siteStagingDirectory
 
 #The zip contains a folder, so when we unzip need to move everything up one folder level.
 Get-Item -Path $siteStagingDirectory | Get-ChildItem | Get-ChildItem | Move-Item -Destination $siteStagingDirectory -Force
+#Copy permissions of the staging directrory to the final directory 
+(Get-Item $siteDirectory).GetAccessControl('Access') | Set-Acl -Path $siteStagingDirectory
 
 #Stop the Help website so the files are not in use.
 Stop-IISSite -Name 'Help'
